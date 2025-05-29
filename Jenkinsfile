@@ -12,7 +12,7 @@ pipeline {
                 // Runs your project's tests. Ensure your package.json has a "test" script.
                 // If you don't have tests yet, you can change this to `echo "No tests configured."`
                 bat 'npm test'
-                echo 'Build ran successfully.'
+                echo 'Test ran successfully.'
             }
         }
         stage('Code Quality') {
@@ -21,7 +21,7 @@ pipeline {
                 // Make sure ESLint is installed as a dev dependency (`npm install eslint --save-dev`)
                 // and you have a .eslintrc.js config file in your project's root.
                 bat 'npx eslint .'
-                echo 'Build ran successfully.'
+                echo 'Code quality ran successfully.'
             }
         }
         stage('Deploy (Staging)') {
@@ -30,7 +30,7 @@ pipeline {
                 // This assumes PM2 is installed and managing your server.js on the target server.
                 // If deploying to a different server via SSH, this step would be more complex.
                 bat 'npx pm2 startOrRestart ecosystem.config.js'
-                echo 'Build ran successfully.'
+                echo 'Deploy ran successfully.'
             }
         }
     }
