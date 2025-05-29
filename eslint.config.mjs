@@ -1,68 +1,91 @@
 // eslint.config.mjs
 import js from "@eslint/js";
-import globals from "globals"; // Provides global variables for different environments
-import { defineConfig } from "eslint/config"; // Correct import for ESLint v9+
+import globals from "globals";
+import { defineConfig } from "eslint/config";
 
 export default defineConfig([
-  // Base configuration for all JS files
+  // Base configuration for all JavaScript files
   {
     files: ["**/*.{js,mjs,cjs}"],
     plugins: { js },
-    extends: [js.configs.recommended], // Correct way to extend recommended config
+    extends: [js.configs.recommended],
     languageOptions: {
-      ecmaVersion: 2022, // Or your target ECMAScript version
-      sourceType: "module", // Assuming you use ES Modules generally
-      // If you have mixed modules (CommonJS and ES Modules),
-      // you might need more specific overrides or a different default.
-      // For now, let's assume ES Modules as default.
+      ecmaVersion: 2022,
+      sourceType: "module",
     },
     rules: {
-      // Relax unused vars rule slightly for common cases (e.g., error in catch)
-      "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "caughtErrors": "all" }],
+      // Warn about unused variables, but allow underscore-prefixed args, vars, and caught errors
+      "no-unused-vars": ["warn", {
+        "argsIgnorePattern": "^_",           // ignore args like (_err)
+        "varsIgnorePattern": "^_",           // ignore variables like _unused
+        "caughtErrorsIgnorePattern": "^_"    // ignore caught errors like catch (_err)
+      }],
+      "no-undef": "error",                   // prevent usage of undefined variables
+      "no-dupe-keys": "error",               // prevent object with duplicate keys
+      "no-useless-escape": "error"           // flag unnecessary escape characters
     }
   },
 
-  // Configuration for Node.js backend files (e.g., controllers, models, server.js)
+  // Node.js backend and test files
   {
     files: [
-      "backend/**/*.js", // All JS files in the backend directory
-      "server.js",      // Your main server file
-      "backend/socket.js", // Your socket management file
-      "backend/seeders/**/*.js", // Your seeders
-      "backend/tests/**/*.js" // Your backend tests (as they run in Node env)
+      "backend/**/*.js",
+      "server.js",
+      "backend/socket.js",
+      "backend/seeders/**/*.js",
+      "backend/tests/**/*.js"
     ],
     languageOptions: {
       globals: {
-        ...globals.node, // Add Node.js global variables (like 'process', 'module', '__dirname')
+        ...globals.node,
+        ...globals.jest, // Jest globals for backend tests
       },
     },
-    rules: {
-      // If you are using CommonJS syntax (require/module.exports) in some Node files,
-      // you might want to explicitly set sourceType to "commonjs" for those files.
-      // For example, if you have files that are strictly CommonJS:
-      // "files": ["backend/controllers/**/*.js", "backend/models/**/*.js"],
-      // "languageOptions": { "sourceType": "commonjs" }
-    }
+    // If some of your backend files (especially older ones or test setup)
+    // explicitly use CommonJS (require/module.exports) and are not .cjs,
+    // you might need to override sourceType for those specific files.
+    // For now, we assume standard Node.js which often mixes module types.
   },
 
-  // Configuration for Browser frontend files (e.g., public/JS/)
+  // Cypress E2E and support files
   {
-    files: ["public/JS/**/*.js"], // All JS files in your public/JS directory
+    files: ["cypress/e2e/**/*.js", "cypress/support/**/*.js"],
     languageOptions: {
       globals: {
-        ...globals.browser, // Add browser global variables (like 'window', 'document', 'alert')
+        ...globals.browser,  // Browser globals as Cypress runs in a browser
+        ...globals.mocha,    // Mocha globals for test structure (describe, it, before, etc.)
+        cy: "readonly",      // Cypress 'cy' object
+        Cypress: "readonly", // Cypress global object
+        expect: "readonly",  // Assertion library often used with Cypress (Chai's expect)
+      },
+    },
+  },
+
+  // Frontend browser scripts
+  {
+    files: ["public/JS/**/*.js"],
+    languageOptions: {
+      globals: {
+        ...globals.browser, // Browser globals for frontend scripts
+      },
+    },
+  },
+
+  // Configuration for CommonJS Cypress config file
+  {
+    files: ["cypress.config.js"],
+    languageOptions: {
+      sourceType: "commonjs", // Crucial for 'require' and 'module.exports'
+      globals: {
+        ...globals.node,      // It runs in a Node.js environment
       },
     },
     rules: {
-      // If you have specific browser-only rules, add them here
+      // Allow 'on' and 'config' parameters in setupNodeEvents to be unused if you're not using them
+      "no-unused-vars": ["warn", {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^(on|config)$" // Specific ignore for 'on' and 'config' in this file
+      }]
     }
-  },
-
-  // Specific rule for CommonJS files if needed (e.g. for module.exports)
-  // This is redundant if you've already set sourceType: "commonjs" for backend files,
-  // but useful if you have a mix and want to be explicit.
-  // { files: ["**/*.js"], languageOptions: { sourceType: "commonjs" } }, // Keep if you explicitly need CommonJS source type for all .js files
-
-  // You had this, but it's better to apply globals to specific file sets.
-  // { files: ["**/*.{js,mjs,cjs}"], languageOptions: { globals: globals.browser } },
+  }
 ]);

@@ -7,6 +7,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     window.location.href = document.referrer || "/";
     return;
   }
-
+  function loadAdmins() {
+    // Your logic to load admins
+    console.log("Loading admins in unauthorized page...");
+  }
   loadAdmins();
 });

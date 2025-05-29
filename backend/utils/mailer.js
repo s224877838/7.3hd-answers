@@ -7,8 +7,8 @@ const transporter = nodemailer.createTransport({
   auth: {
     user: process.env.EMAIL_USER, // Add Gmail address
     pass: process.env.EMAIL_PASSWORD, // Add Gmail App Password
-    user: process.env.EMAIL_USER, // Add Gmail address
-    pass: process.env.EMAIL_PASSWORD, // Add Gmail App Password
+    //user: process.env.EMAIL_USER, // Add Gmail address
+    //pass: process.env.EMAIL_PASSWORD, // Add Gmail App Password
   },
 });
 

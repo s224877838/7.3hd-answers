@@ -65,7 +65,7 @@ exports.getUsers = async function (req, res) {
     });
 };
 exports.deleteQuestion = async function (req, res) {
-  backURL = req.header("Referer") || "/";
+  const backURL = req.header("Referer") || "/";
   await Question.findOneAndDelete({
     _id: req.params.id,
   });
@@ -73,7 +73,7 @@ exports.deleteQuestion = async function (req, res) {
   res.redirect(backURL);
 };
 exports.deleteAnswer = async function (req, res) {
-  backURL = req.header("Referer") || "/";
+  const backURL = req.header("Referer") || "/";
   await Answer.findOneAndDelete({ _id: req.params.id });
   res.redirect(backURL);
 };
