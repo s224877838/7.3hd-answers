@@ -56,9 +56,8 @@ pipeline {
                     :: Define the output zip file name
                     set OUTPUT_ZIP_FILE=myapp.zip
 
-                    :: The PowerShell command to zip will follow this.
-                    :: If PowerShell is still failing, we'll need to troubleshoot that specifically.
-                    powershell "& { Compress-Archive -Path '%TEMP_DEPLOY_DIR%\\*' -DestinationPath '%OUTPUT_ZIP_FILE%' -Force }"
+                    :: USE 7-ZIP HERE INSTEAD OF POWERSHELL
+                    7z a -tzip "%OUTPUT_ZIP_FILE%" "%TEMP_DEPLOY_DIR%\\*"
 
                     :: Clean up the temporary directory after zipping (optional but good practice)
                     rmdir /s /q "%TEMP_DEPLOY_DIR%"
