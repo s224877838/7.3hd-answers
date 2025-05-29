@@ -2,11 +2,7 @@ pipeline {
     agent any // This tells Jenkins to run the pipeline on any available agent.
 
     stages {
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/s224877838/7.3hd-answers.git' // Replace with your repository URL (e.g., https://github.com/your-org/your-repo.git)
-            }
-        }
+        
 
         stage('Build') {
             steps {
