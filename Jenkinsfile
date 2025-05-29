@@ -83,7 +83,7 @@ pipeline {
             steps {
                 script {
                     // Manual approval gate for production deployment
-                    timeout(time: 30, unit: 'MINUTES') { // Give 30 minutes for approval
+                    timeout(time: 5, unit: 'SECOND') { // Give 30 minutes for approval
                         input message: 'Promote to Production? Confirm manual approval.'
                     }
 
