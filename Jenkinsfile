@@ -110,9 +110,10 @@ pipeline {
                        echo "❌ Production deployment failed: ${err}"
                       currentBuild.result = 'FAILURE'
                       throw err
-                 }
+                    }
                }
            }
       }
 
+}
 }
