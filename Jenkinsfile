@@ -31,28 +31,37 @@ pipeline {
         stage('Package Application') {
             steps {
                 echo 'Packaging application for deployment...'
-                // This is an example for a simple zip. For real apps, consider Docker, WebDeploy, etc.
-                // If your app is built into a 'dist' folder, you'd zip that.
-                // Assuming your backend/server.js and public/JS are what you need for deployment.
-                // You might need to exclude node_modules or other development files.
-                // For Windows, using PowerShell's Compress-Archive is robust, or 7-Zip/WinRAR if installed.
                 bat '''
-                    # Create a temporary directory for packaging
-                    mkdir deploy_package
-                    copy backend deploy_package\\backend /E /I
-                    copy public deploy_package\\public /E /I
-                    copy ecosystem.config.js deploy_package
-                    copy package.json deploy_package
-                    copy package-lock.json deploy_package
+                    :: Define the temporary directory for packaging
+                    set TEMP_DEPLOY_DIR=.\\deploy_package
 
-                    # Now, zip it up. Windows built-in zip command is limited.
-                    # PowerShell's Compress-Archive is better, but requires PowerShell 5.0+
-                    # If you have 7-Zip or WinRAR installed and in PATH, you can use them:
-                    # "C:\\Program Files\\7-Zip\\7z.exe" a -tzip myapp.zip .\\deploy_package\\*
-                    #
-                    # For a simple built-in option, you might need to use PowerShell or rely on a tool like 'zip' if installed.
-                    # Let's use PowerShell for a more native script.
-                    powershell "& { Compress-Archive -Path 'deploy_package\\*' -DestinationPath 'myapp.zip' -Force }"
+                    :: Clean up any previous temp directory
+                    if exist "%TEMP_DEPLOY_DIR%" (
+                        rmdir /s /q "%TEMP_DEPLOY_DIR%"
+                    ) 
+                    mkdir "%TEMP_DEPLOY_DIR%"
+
+                    :: Copy backend folder content (using xcopy for directories)
+                    xcopy backend "%TEMP_DEPLOY_DIR%\\backend" /E /I /Y
+
+                    :: Copy public folder content (using xcopy for directories)
+                    xcopy public "%TEMP_DEPLOY_DIR%\\public" /E /I /Y
+
+                    :: Copy essential root-level files
+                    copy package.json "%TEMP_DEPLOY_DIR%" /Y
+                    copy package-lock.json "%TEMP_DEPLOY_DIR%" /Y
+                    copy ecosystem.config.js "%TEMP_DEPLOY_DIR%" /Y
+                    :: Add any other root-level files your app needs to run here
+
+                    :: Define the output zip file name
+                    set OUTPUT_ZIP_FILE=myapp.zip
+
+                    :: The PowerShell command to zip will follow this.
+                    :: If PowerShell is still failing, we'll need to troubleshoot that specifically.
+                    powershell "& { Compress-Archive -Path '%TEMP_DEPLOY_DIR%\\*' -DestinationPath '%OUTPUT_ZIP_FILE%' -Force }"
+
+                    :: Clean up the temporary directory after zipping (optional but good practice)
+                    rmdir /s /q "%TEMP_DEPLOY_DIR%"
                 '''
                 archiveArtifacts artifacts: 'myapp.zip', fingerprint: true
                 echo 'Application packaged and archived.'
