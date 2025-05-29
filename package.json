@@ -16,14 +16,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
-    "cypress:open": "cypress open"
+    "test": "jest"
+    
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "cypress": "^14.4.0",
+   
     "nodemon": "^3.1.10",
     "jest": "^29.7.0",
     "supertest": "^7.1.1"
