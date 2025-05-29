@@ -46,7 +46,7 @@ async function createAnswer(req, res) {
     
 
     res.status(201).json({ message: "Answer created successfully", answer });
-  } catch (error) {
+  } catch  {
     res.status(500).json({ error: "Failed to create answer" });
   }
 }
@@ -92,7 +92,7 @@ async function updateAnswer(req, res) {
     }
 
     res.json({ message: "answer updated successfully", answer });
-  } catch (error) {
+  } catch  {
     res.status(500).json({ error: "Failed to update answer" });
   }
 }
@@ -114,7 +114,7 @@ async function deleteAnswer(req, res) {
     await Answer.findByIdAndDelete(req.params.id);
 
     res.json({ message: "answer deleted successfully" });
-  } catch (error) {
+  } catch  {
     res.status(500).json({ error: "Failed to delete answer" });
   }
 }

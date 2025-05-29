@@ -65,7 +65,7 @@ const extractSession = (req, res, next) => {
       try {
         const user = await User.findById(decoded.id);
         req.user = user || null;
-      } catch (error) {
+      } catch  {
         req.user = null;
       }
     }

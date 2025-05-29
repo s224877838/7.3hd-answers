@@ -1,4 +1,4 @@
-const User = require("../models/user");
+//const User = require("../models/user");
 
 async function isAuthenticated(req, res, next) {
   if (!req.user) {

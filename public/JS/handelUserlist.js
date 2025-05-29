@@ -55,7 +55,7 @@ async function loadUsers() {
   }
 }
 
-// Delete user by ID
+/* Delete user by ID
 async function deleteUser(id) {
   const token = localStorage.getItem("token");
 
@@ -78,3 +78,4 @@ async function deleteUser(id) {
     alert("Failed to delete user.");
   }
 }
+*/

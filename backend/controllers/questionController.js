@@ -24,7 +24,7 @@ async function getQuestions(req, res) {
       totalPages,
       totalQuestions,
     });
-  } catch (error) {
+  } catch  {
     res.status(500).json({ error: "Failed to fetch questions" });
   }
 }
@@ -55,7 +55,7 @@ async function createQuestion(req, res) {
     res
       .status(201)
       .json({ message: "Question created successfully", question });
-  } catch (error) {
+  } catch  {
     res.status(500).json({ error: "Failed to create question" });
   }
 }
@@ -101,7 +101,7 @@ async function updateQuestion(req, res) {
     }
 
     res.json({ message: "Question updated successfully", question });
-  } catch (error) {
+  } catch  {
     res.status(500).json({ error: "Failed to update question" });
   }
 }
@@ -124,7 +124,7 @@ async function deleteQuestion(req, res) {
     await Answer.deleteMany({ question: req.params.id });
 
     res.json({ message: "Question deleted successfully" });
-  } catch (error) {
+  } catch  {
     res.status(500).json({ error: "Failed to delete question" });
   }
 }
@@ -146,7 +146,7 @@ async function getQuestionDetails(req, res) {
     );
 
     res.json({ question, answers });
-  } catch (error) {
+  } catch  {
     res.status(500).json({ error: "Failed to fetch question details" });
   }
 }

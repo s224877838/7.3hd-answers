@@ -21,7 +21,7 @@ const {
   createAnswer,
   updateAnswer,
   deleteAnswer,
-  addAnswerReport,
+  //addAnswerReport,
 } = require("./controllers/answerController");
 const {
   getUsers,

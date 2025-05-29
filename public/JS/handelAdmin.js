@@ -64,7 +64,7 @@ async function loadAdmins() {
   }
 }
 
-// Handle admin creation
+/* Handle admin creation
 async function submitAdminForm(event) {
   event.preventDefault();
 
@@ -139,3 +139,4 @@ function editAdmin(id, name, email) {
   document.getElementById("admin-form").style.display = "block";
   document.getElementById("admin-form").setAttribute("data-id", id);
 }
+*/

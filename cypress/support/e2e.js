@@ -22,8 +22,9 @@ import "./commands";
 // You can change the location of this file or turn off automatically serving support files
 // via the 'supportFile' configuration option.
 
-// Prevent Cypress from failing tests due to uncaught exceptions from the app
+/* Prevent Cypress from failing tests due to uncaught exceptions from the app
 Cypress.on("uncaught:exception", (err, runnable) => {
   // returning false here prevents Cypress from failing the test
   return false;
 });
+*/

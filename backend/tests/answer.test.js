@@ -2,11 +2,11 @@ const {
   createAnswer,
   updateAnswer,
   deleteAnswer,
-  addAnswerReport,
+  //addAnswerReport,
 } = require("../controllers/answerController");
 const Answer = require("../models/Answer");
 const Question = require("../models/question");
-const Report = require("../models/Report");
+//const Report = require("../models/Report");
 
 // Mock models
 jest.mock("../models/Answer");

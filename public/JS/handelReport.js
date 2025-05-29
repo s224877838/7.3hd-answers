@@ -2,7 +2,7 @@
 
 document.addEventListener("DOMContentLoaded", async () => {
   const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
+  //const role = localStorage.getItem("role");
 
   try {
     const response = await fetch("/api/questions", {

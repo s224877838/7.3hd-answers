@@ -7,7 +7,7 @@ exports.admins = function (req, res) {
     .then((admins) => {
       res.render("user-list", { users: admins, modifiable: true });
     })
-    .catch((err) => {
+    .catch((_err) => {
       res.status(500).send({ error: "Failed to fetch admins" });
     });
 };
@@ -35,7 +35,7 @@ exports.createAdmin = async function (req, res) {
     await newAdmin.save();
 
     res.redirect("/admin/create?success=Admin+created+successfully");
-  } catch (err) {
+  } catch  {
     res.redirect("/admin/create?error=Server+error");
   }
 };
@@ -60,7 +60,7 @@ exports.getUsers = async function (req, res) {
     .then((users) => {
       res.render("user-list", { users: users, modifiable: false });
     })
-    .catch((err) => {
+    .catch((_err) => {
       res.status(500).send({ error: "Failed to fetch admins" });
     });
 };
