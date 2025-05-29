@@ -93,13 +93,5 @@ export default defineConfig([
       },
     },
   }
-  {
-    files: ["deploy_package/ecosystem.config.js"],
-    languageOptions: {
-      sourceType: "commonjs",
-      globals: {
-        ...globals.node,
-      },
-    },
-  }
+
 ]);
