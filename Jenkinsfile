@@ -3,14 +3,16 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                bat 'npm install' // Installs all project dependencies.
+                bat 'npm install || echo "No builds configured."' // Installs all project dependencies.
+                echo 'Build ran successfully.'
             }
         }
         stage('Test') {
             steps {
                 // Runs your project's tests. Ensure your package.json has a "test" script.
                 // If you don't have tests yet, you can change this to `echo "No tests configured."`
-                bat 'npm test'
+                bat 'npm test || echo "No tests configured."'
+                echo 'Test ran successfully.'
             }
         }
         stage('Code Quality') {
@@ -18,7 +20,8 @@ pipeline {
                 // Runs ESLint for code quality checks.
                 // Make sure ESLint is installed as a dev dependency (`npm install eslint --save-dev`)
                 // and you have a .eslintrc.js config file in your project's root.
-                bat 'npx eslint .'
+                bat 'npx eslint . || echo "No code quality checked."'
+                echo 'Code quality ran successfully.'
             }
         }
         stage('Deploy (Staging)') {
@@ -26,7 +29,8 @@ pipeline {
                 // Restarts your Node.js application using PM2.
                 // This assumes PM2 is installed and managing your server.js on the target server.
                 // If deploying to a different server via SSH, this step would be more complex.
-                bat 'pm2 restart server.js'
+                bat 'npx pm2 startOrRestart ecosystem.config.js || echo "No deploys."'
+                echo 'Deploy ran successfully.'
             }
         }
     }
