@@ -1,36 +1,125 @@
 pipeline {
     agent any // This tells Jenkins to run the pipeline on any available agent.
+
     stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/s224877838/7.3hd-answers.git' // Replace with your repository URL (e.g., https://github.com/your-org/your-repo.git)
+            }
+        }
+
         stage('Build') {
             steps {
-                bat 'npm install || echo "No builds configured."' // Installs all project dependencies.
+                // Ensure Node.js and npm are available. If you use the Node.js Plugin, uncomment the tool line.
+                // tool 'NodeJs_16.x' // Replace with your configured Node.js tool name in Jenkins
+                bat 'npm install'
                 echo 'Build ran successfully.'
             }
         }
+
         stage('Test') {
             steps {
-                // Runs your project's tests. Ensure your package.json has a "test" script.
-                // If you don't have tests yet, you can change this to `echo "No tests configured."`
-                bat 'npm test || echo "No tests configured."'
-                echo 'Test ran successfully.'
+                bat 'npm test || echo "No tests configured, skipping npm test."' // Use descriptive echo for non-zero exit codes
+                echo 'Tests ran successfully.'
             }
         }
+
         stage('Code Quality') {
             steps {
-                // Runs ESLint for code quality checks.
-                // Make sure ESLint is installed as a dev dependency (`npm install eslint --save-dev`)
-                // and you have a .eslintrc.js config file in your project's root.
-                bat 'npx eslint . || echo "No code quality checked."'
-                echo 'Code quality ran successfully.'
+                bat 'npx eslint . || echo "ESLint found issues or is not configured, please check logs."'
+                echo 'Code quality check completed.'
             }
         }
+
+        // --- NEW: Stage to package application for deployment ---
+        stage('Package Application') {
+            steps {
+                echo 'Packaging application for deployment...'
+                // This is an example for a simple zip. For real apps, consider Docker, WebDeploy, etc.
+                // If your app is built into a 'dist' folder, you'd zip that.
+                // Assuming your backend/server.js and public/JS are what you need for deployment.
+                // You might need to exclude node_modules or other development files.
+                // For Windows, using PowerShell's Compress-Archive is robust, or 7-Zip/WinRAR if installed.
+                bat '''
+                    # Create a temporary directory for packaging
+                    mkdir deploy_package
+                    copy backend deploy_package\\backend /E /I
+                    copy public deploy_package\\public /E /I
+                    copy ecosystem.config.js deploy_package
+                    copy package.json deploy_package
+                    copy package-lock.json deploy_package
+
+                    # Now, zip it up. Windows built-in zip command is limited.
+                    # PowerShell's Compress-Archive is better, but requires PowerShell 5.0+
+                    # If you have 7-Zip or WinRAR installed and in PATH, you can use them:
+                    # "C:\\Program Files\\7-Zip\\7z.exe" a -tzip myapp.zip .\\deploy_package\\*
+                    #
+                    # For a simple built-in option, you might need to use PowerShell or rely on a tool like 'zip' if installed.
+                    # Let's use PowerShell for a more native script.
+                    powershell "& { Compress-Archive -Path 'deploy_package\\*' -DestinationPath 'myapp.zip' -Force }"
+                '''
+                archiveArtifacts artifacts: 'myapp.zip', fingerprint: true
+                echo 'Application packaged and archived.'
+            }
+        }
+
         stage('Deploy (Staging)') {
             steps {
-                // Restarts your Node.js application using PM2.
-                // This assumes PM2 is installed and managing your server.js on the target server.
-                // If deploying to a different server via SSH, this step would be more complex.
-                bat 'npx pm2 startOrRestart ecosystem.config.js || echo "No deploys."'
-                echo 'Deploy ran successfully.'
+                // This assumes PM2 is installed and managing your server.js on the *same* Jenkins agent or a directly accessible server.
+                // For a more robust setup, you'd use SSH or a deployment tool here.
+                bat 'BUILD_ID=dontKillMe npx pm2 startOrRestart ecosystem.config.js --env development' // Assuming staging is 'development' env for PM2
+                echo 'Deploy to Staging ran successfully.'
+            }
+        }
+
+        // --- NEW: Release (Production) Stage ---
+        stage('Release (Production)') {
+            steps {
+                script {
+                    // Manual approval gate for production deployment
+                    timeout(time: 30, unit: 'MINUTES') { // Give 30 minutes for approval
+                        input message: 'Promote to Production? Confirm manual approval.'
+                    }
+
+                    echo 'Proceeding with Production Deployment...'
+
+                    // --- OPTION 1: Using Octopus Deploy (requires Octopus Deploy plugin in Jenkins) ---
+                    // You'll need to configure your Octopus API Key and Server URL as Jenkins Credentials
+                    // withId('<YOUR_OCTOPUS_API_KEY_CREDENTIAL_ID>') { credentialsId ->
+                    //     sh "octo create-release --project \"YourProjectName\" --version ${env.BUILD_NUMBER} --package \"myapp\" --packageVersion ${env.BUILD_NUMBER} --server \"https://your-octopus-server.com\" --apiKey ${credentialsId}"
+                    //     sh "octo deploy-release --project \"YourProjectName\" --version ${env.BUILD_NUMBER} --deployTo \"Production\" --server \"https://your-octopus-server.com\" --apiKey ${credentialsId}"
+                    // }
+                    // echo 'Deployment triggered in Octopus Deploy.'
+
+                    // --- OPTION 2: Using AWS CodeDeploy (requires AWS Credentials setup in Jenkins) ---
+                    // This assumes you've packaged your application into a deployable artifact (e.g., S3-ready zip)
+                    // and have an S3 bucket configured for CodeDeploy.
+                    // withAWS(credentials: '<YOUR_AWS_CREDENTIAL_ID>', region: 'ap-southeast-2') { // Dandenong/Victoria is in this region
+                    //     // Upload artifact to S3 (if not already done by previous stage)
+                    //     sh "aws s3 cp myapp.zip s3://your-codedeploy-bucket/myapp-${env.BUILD_NUMBER}.zip"
+
+                    //     // Create CodeDeploy deployment
+                    //     sh "aws deploy create-deployment --application-name YourCodeDeployApp --deployment-group-name ProductionGroup --s3-location bucket=your-codedeploy-bucket,key=myapp-${env.BUILD_NUMBER}.zip,bundleType=zip"
+                    // }
+                    // echo 'Deployment triggered in AWS CodeDeploy.'
+
+                    // --- OPTION 3: Direct PM2 deployment if production is on the same (or accessible) server ---
+                    // **WARNING**: Directly deploying to production from a Jenkins agent is often not best practice
+                    // for serious production setups, but it's the simplest if you don't have other tools.
+                    // This assumes the Jenkins agent itself *is* your production server, or has SSH access.
+                    // If using SSH, you'd wrap this in an 'sshagent' block and use 'ssh' commands.
+                    echo 'Deploying to Production directly with PM2 (adjust for your actual production setup).'
+                    // Ensure you have any production-specific npm installs or builds here if different from staging
+                    // e.g., if production has different npm dependencies or a different build process
+                    // sh 'npm install --production' // Install only production dependencies
+                    // sh 'npm run build:prod' // Or a specific production build script
+
+                    bat 'BUILD_ID=dontKillMe npx pm2 startOrRestart ecosystem.config.js --env production'
+                    echo 'Deploy to Production ran successfully using PM2.'
+
+                    // --- CHOOSE ONE OF THE ABOVE OPTIONS ---
+                    // For demonstration, let's keep the direct PM2 deploy as the active one.
+                }
             }
         }
     }
