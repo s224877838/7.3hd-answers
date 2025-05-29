@@ -71,7 +71,9 @@ pipeline {
             steps {
                 // This assumes PM2 is installed and managing your server.js on the *same* Jenkins agent or a directly accessible server.
                 // For a more robust setup, you'd use SSH or a deployment tool here.
-                bat 'BUILD_ID=dontKillMe npx pm2 startOrRestart ecosystem.config.js --env development' // Assuming staging is 'development' env for PM2
+                withEnv(['BUILD_ID=dontKillMe']) {
+                    bat 'npx pm2 startOrRestart ecosystem.config.js --env development' // Assuming staging is 'development' env for PM2
+                }
                 echo 'Deploy to Staging ran successfully.'
             }
         }
@@ -117,8 +119,9 @@ pipeline {
                     // e.g., if production has different npm dependencies or a different build process
                     // sh 'npm install --production' // Install only production dependencies
                     // sh 'npm run build:prod' // Or a specific production build script
-
-                    bat 'BUILD_ID=dontKillMe npx pm2 startOrRestart ecosystem.config.js --env production'
+                    withEnv(['BUILD_ID=dontKillMe']) {
+                       bat 'npx pm2 startOrRestart ecosystem.config.js --env production'
+                    }
                     echo 'Deploy to Production ran successfully using PM2.'
 
                     // --- CHOOSE ONE OF THE ABOVE OPTIONS ---
