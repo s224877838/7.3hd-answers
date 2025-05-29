@@ -26,7 +26,7 @@ pipeline {
                 // Restarts your Node.js application using PM2.
                 // This assumes PM2 is installed and managing your server.js on the target server.
                 // If deploying to a different server via SSH, this step would be more complex.
-                bat 'pm2 restart server.js'
+                bat 'npx pm2 restart server.js'
             }
         }
     }
