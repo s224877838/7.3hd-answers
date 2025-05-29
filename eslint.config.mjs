@@ -85,11 +85,20 @@ export default defineConfig([
 
   // NEW BLOCK: Configuration for PM2 ecosystem.config.js (CommonJS in Node environment)
   {
-    files: ["ecosystem.config.js"],
+    files: ["**/ecosystem.config.js"],
     languageOptions: {
       sourceType: "commonjs", // Explicitly define as CommonJS
       globals: {
         ...globals.node,     // It runs in a Node.js environment
+      },
+    },
+  }
+  {
+    files: ["deploy_package/ecosystem.config.js"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: {
+        ...globals.node,
       },
     },
   }
