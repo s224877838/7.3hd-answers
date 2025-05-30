@@ -145,7 +145,8 @@ async function getQuestionDetails(req, res) {
       "name email"
     );
 
-    res.json({ question, answers });
+    res.js
+    on({ question, answers });
   } catch  {
     res.status(500).json({ error: "Failed to fetch question details" });
   }

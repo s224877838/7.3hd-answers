@@ -1,4 +1,5 @@
 const Answer = require("../models/Answer");
+const User = require('../models/user');
 const Question = require("../models/question");
 const { slugify } = require("../utils/slug");
 const { sendAnswerNotificationEmail } = require("../utils/mailer"); 
@@ -26,7 +27,9 @@ async function createAnswer(req, res) {
     });
 
     try {
-      const questionData = await Question.findById(question).populate('author');
+      const questionData = await Question.findById(question).populate('author')
+      .populate('author', 'email name') // Correct populate syntax
+      .exec();
       if (questionData && questionData.author && questionData.author.email) {
         await sendAnswerNotificationEmail(
           questionData.author.email,
