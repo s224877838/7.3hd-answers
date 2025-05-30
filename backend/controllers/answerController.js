@@ -1,5 +1,5 @@
 const Answer = require("../models/Answer");
-const User = require('../models/user');
+const user = require('../models/user');
 const Question = require("../models/question");
 const { slugify } = require("../utils/slug");
 const { sendAnswerNotificationEmail } = require("../utils/mailer"); 
