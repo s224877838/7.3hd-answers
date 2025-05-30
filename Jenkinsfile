@@ -166,7 +166,7 @@ pipeline {
                         echo " Production deployment triggered by Octopus"
                         emailext (
                             subject: "RELEASED: ${env.JOB_NAME} v${env.BUILD_NUMBER} to production",
-                            to: 's224877838@deakin.edu.au'
+                            to: 'levinjoseph15@gmail.com'
                         )
                     } else {
                         echo "🚫 Production release aborted"
