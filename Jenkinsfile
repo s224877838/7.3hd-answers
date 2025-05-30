@@ -3,6 +3,12 @@ pipeline {
     environment {
         NEW_RELIC_ACCOUNT_ID = '6787357'
         NEW_RELIC_API_URL = "https://api.newrelic.com/v2/alerts_incidents.json"
+        SMTP_SERVER = 'smtp.gmail.com'
+        SMTP_PORT = '587'
+        SMTP_USERNAME = credentials('SMTP_USER')
+        SMTP_PASSWORD = credentials('SMTP_PASS')
+        EMAIL_FROM = 'levinjoseph11@gmail.com'
+        EMAIL_RECIPIENTS = 'levinjoseph15@gmail.com'
     }
     stages {
         stage('Build') {
@@ -73,7 +79,11 @@ pipeline {
                                 emailext(
                                     subject: "New Relic ALERT: ${activeAlerts.size()} active issues",
                                     body: "Check New Relic dashboard for active alerts.",
-                                    to: 'levinjoseph15@gmail.com'
+                                    to: "${env.EMAIL_RECIPIENTS}",
+                                    from: "${env.EMAIL_FROM}",
+                                    mimeType: 'text/html',
+                                    replyTo: "${env.EMAIL_FROM}",
+                                    recipientProviders: [[$class: 'DevelopersRecipientProvider']]
                                 )
                                 currentBuild.result = 'UNSTABLE' // marking build as warning
                             } else {
@@ -81,9 +91,14 @@ pipeline {
                                 
                                    always{
                                        emailext(
-                                           to: 'levinjoseph15@gmail.com',
+                                           
                                            subject: "Jenkins Notification: No New Relic alerts",
                                            body: "The Jenkins pipeline completed successfully, and no active New Relic incidents were found."
+                                            to: "${env.EMAIL_RECIPIENTS}",
+                                            from: "${env.EMAIL_FROM}",
+                                            mimeType: 'text/html',
+                                            replyTo: "${env.EMAIL_FROM}",
+                                            recipientProviders: [[$class: 'DevelopersRecipientProvider']]
                                        )
                                    }
                                        
@@ -166,7 +181,11 @@ pipeline {
                         echo " Production deployment triggered by Octopus"
                         emailext (
                             subject: "RELEASED: ${env.JOB_NAME} v${env.BUILD_NUMBER} to production",
-                            to: 'levinjoseph15@gmail.com'
+                            to: "${env.EMAIL_RECIPIENTS}",
+                            from: "${env.EMAIL_FROM}",
+                            mimeType: 'text/html',
+                            replyTo: "${env.EMAIL_FROM}",
+                            recipientProviders: [[$class: 'DevelopersRecipientProvider']]
                         )
                     } else {
                         echo "🚫 Production release aborted"
