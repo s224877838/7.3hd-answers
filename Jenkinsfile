@@ -98,33 +98,30 @@ pipeline {
         stage('Package & Push to Octopus') {
             steps {
                 script {
-                    // Define the Package ID expected by Octopus. Ensure this matches your Octopus project.
                     def octopusPackageId = 'my jenku app'
-                    def safePackageFileName = "${octopusPackageId.replace(' ', '-')}.${env.BUILD_NUMBER}.zip" // Replaced spaces with hyphens for filename safety
+                    def packageVersion = "1.0.${env.BUILD_NUMBER}" // Define version here
+
+                    // IMPORTANT: Name the zip file so Octopus can parse ID and Version
+                    // Replace spaces with dots in the package ID for the filename
+                    def packageIdForFilename = octopusPackageId.replace(' ', '.')
+                    def safePackageFileName = "${packageIdForFilename}.${packageVersion}.zip"
+
 
                     echo "Creating package: ${safePackageFileName}"
 
-                    // Clean up old zips before creating a new one
-                    bat 'del /Q *.zip || true' // || true makes sure it doesn't fail if no zips exist
-
-                    // Create the zip package. Adjust 'dist' if your build output is in a different directory.
-                    // If you want to include all files in the current directory, use 'zip -r "${safePackageFileName}" .'
-                    // Assuming your npm build outputs to a 'dist' folder for example:
-                    bat "zip -r \"${safePackageFileName}\" ."
+                    bat 'del /Q *.zip || true' // Clean up previous zips
+                    bat "zip -r \"${safePackageFileName}\" ." // Create new zip (ensure it zips what you need)
 
                     withCredentials([string(credentialsId: 'OCTOPUS_API_KEY', variable: 'OCTO_API')]) {
                         def octopusServer = 'https://jenku.octopus.app'
-                        def packageVersion = "1.0.${env.BUILD_NUMBER}" // Version for the package
 
-                        // Push the package to Octopus
                         bat """
                             C:\\Users\\Levin\\Downloads\\OctopusTools.9.0.0.win-x64\\octo.exe push ^
                             --server "${octopusServer}" ^
                             --apikey "%OCTO_API%" ^
                             --package "${safePackageFileName}" ^
-                            --id "${octopusPackageId}" ^
-                            --version "${packageVersion}" ^
                             --replace-existing
+                            // REMOVED --id and --version as they are inferred from --package filename
                         """
                         echo "✅ Package ${safePackageFileName} pushed to Octopus"
                     }
