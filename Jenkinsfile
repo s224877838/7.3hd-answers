@@ -80,11 +80,15 @@ pipeline {
                                 currentBuild.result = 'UNSTABLE' // Optional: mark build as warning
                             } else {
                                 echo 'No active New Relic incidents found.'
-                                emailext(
-                                    subject: "Jenkins Notification: No New Relic alerts",
-                                    body: "The Jenkins pipeline completed successfully, and no active New Relic incidents were found.",
-                                    to: 's224877838@deakin.edu.au'
-                                )
+                                post{
+                                   always{
+                                       emailext(
+                                           to: 's224877838@deakin.edu.au'
+                                           subject: "Jenkins Notification: No New Relic alerts",
+                                           body: "The Jenkins pipeline completed successfully, and no active New Relic incidents were found.",
+                                       )
+                                   }
+                                }       
                             }
                         }
                     }
