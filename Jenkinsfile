@@ -121,7 +121,7 @@ pipeline {
                             --apikey "%OCTO_API%" ^
                             --package "${safePackageFileName}" ^
                             --replace-existing
-                            // REMOVED --id and --version as they are inferred from --package filename
+                            
                         """
                         echo "✅ Package ${safePackageFileName} pushed to Octopus"
                     }
