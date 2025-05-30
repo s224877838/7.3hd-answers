@@ -141,7 +141,7 @@ pipeline {
                             def octopusServer = 'https://jenku.octopus.app'
                             def projectName = 'my jenku app' // Ensure this matches your Octopus project exactly
                             def releaseVersion = "1.0.${env.BUILD_NUMBER}"
-                            def environmentName = 'Development'
+                            def environmentName = 'Production'
                             def octopusPackageId = 'My Jenku App' // Matches the ID used in the Push stage
 
                             // Create a release (now with the package specified)
