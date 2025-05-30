@@ -83,9 +83,9 @@ pipeline {
                                 post{
                                    always{
                                        emailext(
-                                           to: 's224877838@deakin.edu.au'
+                                           to: 's224877838@deakin.edu.au',
                                            subject: "Jenkins Notification: No New Relic alerts",
-                                           body: "The Jenkins pipeline completed successfully, and no active New Relic incidents were found.",
+                                           body: "The Jenkins pipeline completed successfully, and no active New Relic incidents were found."
                                        )
                                    }
                                 }       
