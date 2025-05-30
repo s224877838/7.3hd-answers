@@ -95,53 +95,92 @@ pipeline {
                 }
             }
         }
-        
-        stage('Release to Production') {
-          steps {
-              script {
-                  echo "Checking deployment prerequisites..."
+        stage('Package & Push to Octopus') {
+            steps {
+                script {
+                    // Define the Package ID expected by Octopus. Ensure this matches your Octopus project.
+                    def octopusPackageId = 'my jenku app'
+                    def safePackageFileName = "${octopusPackageId.replace(' ', '-')}.${env.BUILD_NUMBER}.zip" // Replaced spaces with hyphens for filename safety
 
-                   def canDeploy = input(
-                       message: "Promote to PRODUCTION?",
-                       parameters: [choice(choices: 'Yes\nNo', description: 'Confirm production release', name: 'approval')]
+                    echo "Creating package: ${safePackageFileName}"
+
+                    // Clean up old zips before creating a new one
+                    bat 'del /Q *.zip || true' // || true makes sure it doesn't fail if no zips exist
+
+                    // Create the zip package. Adjust 'dist' if your build output is in a different directory.
+                    // If you want to include all files in the current directory, use 'zip -r "${safePackageFileName}" .'
+                    // Assuming your npm build outputs to a 'dist' folder for example:
+                    bat "zip -r \"${safePackageFileName}\" ."
+
+                    withCredentials([string(credentialsId: 'OCTOPUS_API_KEY', variable: 'OCTO_API')]) {
+                        def octopusServer = 'https://jenku.octopus.app'
+                        def packageVersion = "1.0.${env.BUILD_NUMBER}" // Version for the package
+
+                        // Push the package to Octopus
+                        bat """
+                            C:\\Users\\Levin\\Downloads\\OctopusTools.9.0.0.win-x64\\octo.exe push ^
+                            --server "${octopusServer}" ^
+                            --apikey "%OCTO_API%" ^
+                            --package "${safePackageFileName}" ^
+                            --id "${octopusPackageId}" ^
+                            --version "${packageVersion}" ^
+                            --replace-existing
+                        """
+                        echo "✅ Package ${safePackageFileName} pushed to Octopus"
+                    }
+                }
+            }
+        }
+        stage('Release to Production') {
+            steps {
+                script {
+                    echo "Checking deployment prerequisites..."
+
+                    def canDeploy = input(
+                        message: "Promote to PRODUCTION?",
+                        parameters: [choice(choices: 'Yes\nNo', description: 'Confirm production release', name: 'approval')]
                     )
 
-                   if (canDeploy == 'Yes') {
-                       withCredentials([string(credentialsId: 'OCTOPUS_API_KEY', variable: 'OCTO_API')]) {
-                           def octopusServer = 'https://jenku.octopus.app' // Replace with your Octopus URL
-                           def projectName = 'my jenku app' // Replace with your Octopus project
-                           def releaseVersion = "1.0.${env.BUILD_NUMBER}" // Or however you're tagging
-                           def environmentName = 'Production'
+                    if (canDeploy == 'Yes') {
+                        withCredentials([string(credentialsId: 'OCTOPUS_API_KEY', variable: 'OCTO_API')]) {
+                            def octopusServer = 'https://jenku.octopus.app'
+                            def projectName = 'my jenku app' // Use the exact project name from Octopus
+                            def releaseVersion = "1.0.${env.BUILD_NUMBER}"
+                            def environmentName = 'Production'
 
-                            // Create a release
-                           bat """
-                                 C:\\Users\\Levin\\Downloads\\OctopusTools.9.0.0.win-x64\\octo.exe create-release ^
-                                 --server ${octopusServer} ^
-                                 --apikey ${OCTO_API} ^
-                                 --project "${projectName}" ^
-                                 --releaseNumber ${releaseVersion}
+                            // Define the Package ID expected by Octopus (should match the one used in the push stage)
+                            def octopusPackageId = 'my jenku app'
+
+                            // Create a release, explicitly linking the package
+                            bat """
+                                C:\\Users\\Levin\\Downloads\\OctopusTools.9.0.0.win-x64\\octo.exe create-release ^
+                                --server "${octopusServer}" ^
+                                --apikey "%OCTO_API%" ^
+                                --project "${projectName}" ^
+                                --releaseNumber "${releaseVersion}" ^
+                                --package "${octopusPackageId}:${releaseVersion}" // <-- CRITICAL FIX: Link the package
                             """
 
                             // Deploy the release
-                           bat """
-                                  C:\\Users\\Levin\\Downloads\\OctopusTools.9.0.0.win-x64\\octo.exe deploy-release ^
-                                  --server ${octopusServer} ^
-                                  --apikey ${OCTO_API} ^
-                                  --project "${projectName}" ^
-                                  --releaseNumber ${releaseVersion} ^
-                                  --deployTo "${environmentName}" ^
-                                  --progress
+                            bat """
+                                C:\\Users\\Levin\\Downloads\\OctopusTools.9.0.0.win-x64\\octo.exe deploy-release ^
+                                --server "${octopusServer}" ^
+                                --apikey "%OCTO_API%" ^
+                                --project "${projectName}" ^
+                                --releaseNumber "${releaseVersion}" ^
+                                --deployTo "${environmentName}" ^
+                                --progress
                             """
                         }
 
                         echo "✅ Production deployment triggered via Octopus"
                         emailext (
                             subject: "RELEASED: ${env.JOB_NAME} v${env.BUILD_NUMBER} to production",
-                            to: 'team@company.com'
+                            to: 's224877838@deakin.edu.au'
                         )
                     } else {
-                             echo "🚫 Production release aborted"
-                             currentBuild.result = 'ABORTED'
+                        echo "🚫 Production release aborted"
+                        currentBuild.result = 'ABORTED'
                     }
                 }
             }
