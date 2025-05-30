@@ -25,41 +25,22 @@ pipeline {
             }
         }
         stage('Security') {
-           steps {
-              script {
-                 // Run npm audit and capture results (won't fail the pipeline)
-                  def auditExitCode = bat(
-                      script: 'npm audit --audit-level=high --json > audit-report.json',
-                      returnStatus: true  // Prevents failure on non-zero exit codes
-                  )
-
-                   // Parse the audit report
-                  def auditReport = readJSON(file: 'audit-report.json')
-
-                   // Check if vulnerabilities exist
-                  if (auditReport.vulnerabilities && auditExitCode != 0) {
-                    echo "=== SECURITY WARNING ==="
-                    echo "High-severity vulnerabilities detected (see below)."
-                    echo "Pipeline will continue, but please fix these issues."
-
-                        // Print vulnerability details
-                    auditReport.vulnerabilities.each { vuln ->
-                       echo """
-                            Package: ${vuln.name}  
-                            Issue: ${vuln.title}  
-                            Severity: ${vuln.severity}  
-                            Fix: ${vuln.fix_available ? "Update to ${vuln.target_version}" : "Manual review required"}  
-                            Advisory: ${vuln.url}  
-                        """
+            steps {
+               script {
+                // Run npm audit (always succeeds due to || true)
+                    bat 'npm audit --audit-level=high --json > audit-report.json || true'
+            
+            // Basic vulnerability check using file contains
+                     def report = readFile('audit-report.json')
+                     if (report.contains('"severity":"high"')) {
+                        echo "⚠️ HIGH SEVERITY VULNERABILITIES DETECTED"
+                        echo "Raw report:\n${report}"
+                        currentBuild.result = 'UNSTABLE' // Marks build yellow but continues
+                    } else {
+                        echo "✅ No high-severity vulnerabilities found"
                     }
-
-                     // Mark build as unstable (optional)
-                    currentBuild.result = 'UNSTABLE'
-               } else {
-                    echo "No high-severity vulnerabilities found."
-               }
+                 }
             }
-          }
         }
         stage('Deploy (Staging)') {
             steps {
