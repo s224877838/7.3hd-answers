@@ -123,7 +123,7 @@ pipeline {
 
                             // Deploy the release
                            bat """
-                                  C:\Users\Levin\Downloads\\OctopusTools.9.0.0.win-x64\\octo.exe deploy-release ^
+                                  C:\\Users\\Levin\\Downloads\\OctopusTools.9.0.0.win-x64\\octo.exe deploy-release ^
                                   --server ${octopusServer} ^
                                   --apikey ${OCTO_API} ^
                                   --project "${projectName}" ^
