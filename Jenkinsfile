@@ -1,5 +1,9 @@
 pipeline {
     agent any // This tells Jenkins to run the pipeline on any available agent.
+    environment {
+        NEW_RELIC_ACCOUNT_ID = '6787357'
+        NEW_RELIC_API_URL = "https://api.newrelic.com/v2/alerts_incidents.json"
+    }
     stages {
         stage('Build') {
             steps {
