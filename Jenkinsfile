@@ -50,40 +50,31 @@ pipeline {
         stage('Package & Push to Octopus') {
             steps {
                 script {
-                    // --- FIX 1: Quote the package name for the zip command ---
-                    // Using underscores or hyphens in package names is generally safer
-                    // for command-line tools than spaces. Let's use hyphenated version for the file.
-                    def safePackageFileName = "${env.OCTOPUS_PACKAGE_ID.replace(' ', '-')}.${env.BUILD_NUMBER}.zip"
+                    def safePackageFileName = "${env.OCTOPUS_PACKAGE_ID.replace('.', '-')}.${env.BUILD_NUMBER}.zip"
                     echo "Creating package: ${safePackageFileName}"
 
-                    // Ensure 'zip' is installed on your Jenkins agent.
-                    // If you don't have 'zip', you can use '7z' or a Node.js archiving library.
-                    // For example, if you have 7-Zip in your PATH:
-                    // bat "7z a -tzip \"${safePackageFileName}\" ."
-                    bat "zip -r \"${safePackageFileName}\" ." // Added quotes around filename
+                    // OPTIONAL: Clean up old zips before creating a new one
+                    // This avoids including old packages inside new ones.
+                    // This command uses 'del' for Windows; adjust if on Linux/macOS
+                    bat 'del /Q *.zip || true' // || true makes sure it doesn't fail if no zips exist
 
-                    // 2. Push the package to Octopus Deploy
+                    bat "zip -r \"${safePackageFileName}\" ."
+
                     withCredentials([string(credentialsId: 'OCTOPUS_API_KEY', variable: 'OCTO_API')]) {
                         def octopusServer = 'https://jenku.octopus.app'
                         def packageVersion = "1.0.${env.BUILD_NUMBER}"
 
-                        // --- FIX 2: Ensure API key is correctly passed ---
-                        // Use sh for Unix-like systems, bat for Windows.
-                        // Assuming Windows for now based on your path:
-                        // The issue is likely that %OCTO_API% is null or empty when reaching the bat command.
-                        // Let's try to explicitly echo it first for debugging, and then ensure it's not null.
-                        // If it's still empty, you must check your Jenkins credential setup for 'OCTOPUS_API_KEY'.
+                        // --- REVISED API KEY PASSING ---
                         bat """
-                            echo "Attempting to push package with API Key (masked): %OCTO_API%"
-                            if "%OCTO_API%"=="" (
-                                echo "ERROR: OCTOPUS_API_KEY credential is empty or not resolving!"
-                                exit 1
-                            )
-                            set OCTO_API_KEY_VAR=%OCTO_API% && ^
+                            REM Debugging: Check if OCTO_API is accessible directly
+                            echo Debugging: OCTO_API in bat: %OCTO_API%
+
                             C:\\Users\\Levin\\Downloads\\OctopusTools.9.0.0.win-x64\\octo.exe push ^
                             --server "${octopusServer}" ^
-                            --apikey "%OCTO_API_KEY_VAR%" ^
+                            --apikey "%OCTO_API%" ^                 // Directly use %OCTO_API%
                             --package "${safePackageFileName}" ^
+                            --id "${env.OCTOPUS_PACKAGE_ID}" ^
+                            --version "${packageVersion}" ^
                             --replace-existing
                         """
                         echo "✅ Package ${safePackageFileName} pushed to Octopus"
@@ -91,6 +82,10 @@ pipeline {
                 }
             }
         }
+
+        // ... (Monitoring & Alerting stage remains the same) ...
+
+        
 
         stage('Monitoring & Alerting') {
             steps {
@@ -139,27 +134,33 @@ pipeline {
                     if (canDeploy == 'Yes') {
                         withCredentials([string(credentialsId: 'OCTOPUS_API_KEY', variable: 'OCTO_API')]) {
                             def octopusServer = 'https://jenku.octopus.app'
-                            def projectName = 'My jenku app'
+                            def projectName = env.OCTOPUS_PROJECT_NAME
                             def releaseVersion = "1.0.${env.BUILD_NUMBER}"
                             def environmentName = 'Production'
 
-                            // --- Fix: Ensure API key is correctly passed ---
+                            // Create a release
+                            // --- REVISED API KEY PASSING ---
                             bat """
-                                set OCTO_API_KEY_VAR=%OCTO_API% && ^
+                                REM Debugging: Check if OCTO_API is accessible directly
+                                echo Debugging: OCTO_API in bat: %OCTO_API%
+
                                 C:\\Users\\Levin\\Downloads\\OctopusTools.9.0.0.win-x64\\octo.exe create-release ^
                                 --server "${octopusServer}" ^
-                                --apikey "%OCTO_API_KEY_VAR%" ^
+                                --apikey "%OCTO_API%" ^                 // Directly use %OCTO_API%
                                 --project "${projectName}" ^
                                 --releaseNumber "${releaseVersion}" ^
                                 --package "${env.OCTOPUS_PACKAGE_ID}:${releaseVersion}"
                             """
 
-                            // --- Fix: Ensure API key is correctly passed ---
+                            // Deploy the release
+                            // --- REVISED API KEY PASSING ---
                             bat """
-                                set OCTO_API_KEY_VAR=%OCTO_API% && ^
+                                REM Debugging: Check if OCTO_API is accessible directly
+                                echo Debugging: OCTO_API in bat: %OCTO_API%
+
                                 C:\\Users\\Levin\\Downloads\\OctopusTools.9.0.0.win-x64\\octo.exe deploy-release ^
                                 --server "${octopusServer}" ^
-                                --apikey "%OCTO_API_KEY_VAR%" ^
+                                --apikey "%OCTO_API%" ^                 // Directly use %OCTO_API%
                                 --project "${projectName}" ^
                                 --releaseNumber "${releaseVersion}" ^
                                 --deployTo "${environmentName}" ^
@@ -170,7 +171,7 @@ pipeline {
                         echo "✅ Production deployment triggered via Octopus"
                         emailext (
                             subject: "RELEASED: ${env.JOB_NAME} v${env.BUILD_NUMBER} to production",
-                            to: 'team@company.com'
+                            to: 'your_actual_team_email@example.com'
                         )
                     } else {
                         echo "🚫 Production release aborted"
@@ -179,9 +180,8 @@ pipeline {
                 }
             }
         }
-    }
-    post {
-        always {
+        post {
+         always {
             script {
                 if (currentBuild.result == 'SUCCESS') {
                     emailext(
@@ -203,6 +203,7 @@ pipeline {
                     )
                 }
             }
+         }
         }
     }
 }
