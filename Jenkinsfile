@@ -45,7 +45,7 @@ pipeline {
         stage('Monitoring & Alerting') {
            steps {
               script {
-                   withCredentials([string(credentialsId: 'NEWRELIC_API_KEY', variable: 'NR_KEY']) {
+                   withCredentials([string(credentialsId: 'NEWRELIC_API_KEY', variable: 'NR_KEY')]) {
                       // Get open violations from New Relic using PowerShell
                       bat """
                           @echo off
