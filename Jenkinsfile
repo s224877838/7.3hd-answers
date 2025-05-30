@@ -75,7 +75,7 @@ pipeline {
                                 emailext(
                                     subject: "New Relic ALERT: ${activeAlerts.size()} active issues",
                                     body: "Check New Relic dashboard for active alerts.",
-                                    to: 'levinjoseph15@gmail.com'
+                                    to: 's224877838@deakin.edu.au'
                                 )
                                 currentBuild.result = 'UNSTABLE' // Optional: mark build as warning
                             } else {
@@ -83,7 +83,7 @@ pipeline {
                                 emailext(
                                     subject: "Jenkins Notification: No New Relic alerts",
                                     body: "The Jenkins pipeline completed successfully, and no active New Relic incidents were found.",
-                                    to: 'levinjoseph15@gmail.com'
+                                    to: 's224877838@deakin.edu.au'
                                 )
                             }
                         }
