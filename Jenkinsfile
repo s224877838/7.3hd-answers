@@ -132,32 +132,28 @@ pipeline {
             steps {
                 script {
                     echo "Checking deployment prerequisites..."
-
                     def canDeploy = input(
                         message: "Promote to PRODUCTION?",
                         parameters: [choice(choices: 'Yes\nNo', description: 'Confirm production release', name: 'approval')]
                     )
-
                     if (canDeploy == 'Yes') {
                         withCredentials([string(credentialsId: 'OCTOPUS_API_KEY', variable: 'OCTO_API')]) {
                             def octopusServer = 'https://jenku.octopus.app'
-                            def projectName = 'my jenku app' // Use the exact project name from Octopus
+                            def projectName = 'my jenku app' // Ensure this matches your Octopus project exactly
                             def releaseVersion = "1.0.${env.BUILD_NUMBER}"
                             def environmentName = 'Production'
+                            def octopusPackageId = 'My Jenku App' // Matches the ID used in the Push stage
 
-                            // Define the Package ID expected by Octopus (should match the one used in the push stage)
-                            def octopusPackageId = 'my jenku app'
-
-                            // Create a release, explicitly linking the package
+                            // Create a release (now with the package specified)
                             bat """
                                 C:\\Users\\Levin\\Downloads\\OctopusTools.9.0.0.win-x64\\octo.exe create-release ^
                                 --server "${octopusServer}" ^
                                 --apikey "%OCTO_API%" ^
                                 --project "${projectName}" ^
                                 --releaseNumber "${releaseVersion}" ^
-                                --package "${octopusPackageId}:${releaseVersion}" // <-- CRITICAL FIX: Link the package
+                                --package "${octopusPackageId}:${releaseVersion}"
+                                REM Removed problematic comments from this line.
                             """
-
                             // Deploy the release
                             bat """
                                 C:\\Users\\Levin\\Downloads\\OctopusTools.9.0.0.win-x64\\octo.exe deploy-release ^
@@ -169,11 +165,10 @@ pipeline {
                                 --progress
                             """
                         }
-
                         echo "✅ Production deployment triggered via Octopus"
                         emailext (
                             subject: "RELEASED: ${env.JOB_NAME} v${env.BUILD_NUMBER} to production",
-                            to: 's224877838@deakin.edu.au'
+                            to: 'team@company.com'
                         )
                     } else {
                         echo "🚫 Production release aborted"
