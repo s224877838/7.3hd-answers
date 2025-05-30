@@ -52,5 +52,35 @@ pipeline {
                 echo 'Deploy ran successfully.'
             }
         }
+        stage('Monitoring & Alerting') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'NEWRELIC_API_KEY', variable: 'NR_API_KEY')]) {
+                        bat """
+                        curl -X GET "${env.NEWRELIC_API_URL}" ^
+                        -H "Api-Key: %NR_API_KEY%" ^
+                        -H "Accept: application/json" ^
+                        -o newrelic-alerts.json
+                        """
+
+                        if (fileExists('newrelic-alerts.json')) {
+                            def json = readJSON file: 'newrelic-alerts.json'
+                            def activeAlerts = json?.incidents?.findAll { it?.incident_preference == 'PER_POLICY' }
+
+                            if (activeAlerts && activeAlerts.size() > 0) {
+                                emailext(
+                                    subject: "New Relic ALERT: ${activeAlerts.size()} active issues",
+                                    body: "Check New Relic dashboard for active alerts.",
+                                    to: 'levinjoseph15@gmail.com'
+                                )
+                                currentBuild.result = 'UNSTABLE' // Optional: mark build as warning
+                            } else {
+                                echo 'No active New Relic incidents found.'
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
