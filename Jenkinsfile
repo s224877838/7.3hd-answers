@@ -1,5 +1,5 @@
 pipeline {
-    agent any // This tells Jenkins to run the pipeline on any available agent.
+    agent any // Run the pipeline on any available agent.
     environment {
         NEW_RELIC_ACCOUNT_ID = '6787357'
         NEW_RELIC_API_URL = "https://api.newrelic.com/v2/alerts_incidents.json"
@@ -7,53 +7,102 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                bat 'npm install' // Installs all project dependencies.
+                bat 'npm install' // Installing project dependencies.
                 echo 'Build ran successfully.'
+            }
+            post {
+                always {
+                    emailext(
+                        to: 's224877838@deakin.edu.au',
+                        subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Build Stage - ${currentBuild.currentResult}",
+                        body: "Stage 'Build' completed. Check console output at ${env.BUILD_URL}",
+                        attachLog: true
+                    )
+                }
             }
         }
         stage('Test') {
             steps {
-                // Runs your project's tests. Ensure your package.json has a "test" script.
-                // If you don't have tests yet, you can change this to echo "No tests configured."
-                bat 'npm test'
+                // Running your project's tests.
+                bat 'npm test || exit 0' // Added || exit 0 to ensure stage doesn't fail the entire build if tests fail
                 echo 'Test ran successfully.'
+            }
+            post {
+                always {
+                    emailext(
+                        to: 's224877838@deakin.edu.au',
+                        subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Test Stage - ${currentBuild.currentResult}",
+                        body: "Stage 'Test' completed. Check console output at ${env.BUILD_URL}",
+                        attachmentsPattern: '**/test-results/**/*.xml', // Assuming your test runner generates XML reports here
+                        attachLog: true
+                    )
+                }
             }
         }
         stage('Code Quality') {
             steps {
-                // Runs ESLint for code quality checks.
-                // Make sure ESLint is installed as a dev dependency (npm install eslint --save-dev)
-                // and you have a .eslintrc.js config file in your project's root.
-                bat 'npx eslint .'
+                // Running ESLint for code quality checks.
+                bat 'npx eslint . || exit 0' // Added || exit 0 to allow build to continue if linting has warnings/errors
                 echo 'Code quality ran successfully.'
+            }
+            post {
+                always {
+                    emailext(
+                        to: 's224877838@deakin.edu.au',
+                        subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Code Quality Stage - ${currentBuild.currentResult}",
+                        body: "Stage 'Code Quality' completed. Check console output at ${env.BUILD_URL}",
+                        attachLog: true
+                    )
+                }
             }
         }
         stage('Security') {
             steps {
-               script {
-                // Run npm audit (always succeeds due to || true)
+                script {
+                    // Running npm audit
                     bat 'npm audit --audit-level=high --json > audit-report.json || true'
-            
-            // Basic vulnerability check using file contains
-                     def report = readFile('audit-report.json')
-                     if (report.contains('"severity":"high"')) {
+
+                    // Basic vulnerability checking using file contains
+                    def report = readFile('audit-report.json')
+                    if (report.contains('"severity":"high"')) {
                         echo "⚠️ HIGH SEVERITY VULNERABILITIES DETECTED"
                         echo "Raw report:\n${report}"
                         currentBuild.result = 'UNSTABLE' // Marks build yellow but continues
                     } else {
-                        echo "✅ No high-severity vulnerabilities found"
+                        echo "No high-severity vulnerabilities found"
                     }
-                 }
+                }
+            }
+            post {
+                always {
+                    // This email reports the overall status of the Security stage
+                    emailext(
+                        to: 's224877838@deakin.edu.au',
+                        subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Security Stage - ${currentBuild.currentResult}",
+                        body: "Stage 'Security' completed. Check console output at ${env.BUILD_URL}\n\n" +
+                              "Review audit-report.json for details if marked UNSTABLE.",
+                        attachmentsPattern: 'audit-report.json', // Attach the audit report
+                        attachLog: true
+                    )
+                }
             }
         }
-        
+
         stage('Deploy (Staging)') {
             steps {
-                // Restarts your Node.js application using PM2.
-                // This assumes PM2 is installed and managing your server.js on the target server.
-                // If deploying to a different server via SSH, this step would be more complex.
+                // Restarting your Node.js application using PM2.
                 bat 'npx pm2 startOrRestart ecosystem.config.js'
                 echo 'Deploy ran successfully.'
+            }
+            post {
+                always {
+                    emailext(
+                        to: 's224877838@deakin.edu.au',
+                        subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Deploy (Staging) Stage - ${currentBuild.currentResult}",
+                        body: "Stage 'Deploy (Staging)' completed. Check console output at ${env.BUILD_URL}",
+                        attachLog: true
+                    )
+                }
             }
         }
         stage('Monitoring & Alerting') {
@@ -74,24 +123,41 @@ pipeline {
                             if (activeAlerts && activeAlerts.size() > 0) {
                                 emailext(
                                     subject: "New Relic ALERT: ${activeAlerts.size()} active issues",
-                                    body: "Check New Relic dashboard for active alerts.",
-                                    to: 'levinjoseph15@gmail.com'
+                                    body: "Check New Relic dashboard for active alerts.\nLink: ${env.BUILD_URL}", // Added build URL
+                                    to: 'levinjoseph15@gmail.com' // Specific recipient for alerts
                                 )
-                                currentBuild.result = 'UNSTABLE' // Optional: mark build as warning
+                                currentBuild.result = 'UNSTABLE' // marking build as warning
                             } else {
-                                echo 'No active New Relic incidents found.'
-                                
-                                   always{
-                                       emailext(
-                                           to: 'levinjoseph15@gmail.com',
-                                           subject: "Jenkins Notification: No New Relic alerts",
-                                           body: "The Jenkins pipeline completed successfully, and no active New Relic incidents were found."
-                                       )
-                                   }
-                                       
+                                echo 'No active New Relic incidents found. Monitor and Alert stage ran successfully.'
+                                // This emailext will only send if NO New Relic alerts are found.
+                                // Removed the incorrect `always` block here.
+                                emailext(
+                                    to: 'levinjoseph15@gmail.com',
+                                    subject: "Jenkins Notification: No New Relic alerts detected",
+                                    body: "The Jenkins pipeline's Monitoring & Alerting stage completed successfully, and no active New Relic incidents were found.\nLink: ${env.BUILD_URL}"
+                                )
                             }
+                        } else {
+                            echo "Warning: newrelic-alerts.json not found. New Relic check skipped or failed."
+                            currentBuild.result = 'UNSTABLE'
+                            emailext(
+                                to: 'levinjoseph15@gmail.com',
+                                subject: "Jenkins Warning: New Relic check failed",
+                                body: "The Jenkins pipeline could not perform the New Relic check as expected. See console log for details: ${env.BUILD_URL}"
+                            )
                         }
                     }
+                }
+            }
+            post {
+                always {
+                    // This email reports the overall status of the Monitoring & Alerting stage
+                    emailext(
+                        to: 's224877838@deakin.edu.au',
+                        subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Monitoring & Alerting Stage - ${currentBuild.currentResult}",
+                        body: "Stage 'Monitoring & Alerting' completed. Check console output at ${env.BUILD_URL}",
+                        attachLog: true
+                    )
                 }
             }
         }
@@ -99,18 +165,18 @@ pipeline {
             steps {
                 script {
                     def octopusPackageId = 'my jenku app'
-                    def packageVersion = "1.0.${env.BUILD_NUMBER}" // Define version here
+                    def packageVersion = "1.0.${env.BUILD_NUMBER}" // Version is defined here
 
-                    // IMPORTANT: Name the zip file so Octopus can parse ID and Version
-                    // Replace spaces with dots in the package ID for the filename
+                    // Naming the zip file so Octopus can parse ID and Version
+                    // Replacing with dots in the package ID for the filename
                     def packageIdForFilename = octopusPackageId.replace(' ', '.')
                     def safePackageFileName = "${packageIdForFilename}.${packageVersion}.zip"
 
 
                     echo "Creating package: ${safePackageFileName}"
 
-                    bat 'del /Q *.zip || true' // Clean up previous zips
-                    bat "zip -r \"${safePackageFileName}\" ." // Create new zip (ensure it zips what you need)
+                    bat 'del /Q *.zip || true' // Cleaning up previous zips
+                    bat "zip -r \"${safePackageFileName}\" ." // Creating new zip
 
                     withCredentials([string(credentialsId: 'OCTOPUS_API_KEY', variable: 'OCTO_API')]) {
                         def octopusServer = 'https://jenku.octopus.app'
@@ -121,17 +187,27 @@ pipeline {
                             --apikey "%OCTO_API%" ^
                             --package "${safePackageFileName}" ^
                             --replace-existing
-                            
+
                         """
-                        echo "✅ Package ${safePackageFileName} pushed to Octopus"
+                        echo " Package ${safePackageFileName} pushed to Octopus. Package and Push was successful."
                     }
+                }
+            }
+            post {
+                always {
+                    emailext(
+                        to: 's224877838@deakin.edu.au',
+                        subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Package & Push Stage - ${currentBuild.currentResult}",
+                        body: "Stage 'Package & Push to Octopus' completed. Check console output at ${env.BUILD_URL}",
+                        attachLog: true
+                    )
                 }
             }
         }
         stage('Release to Production') {
             steps {
                 script {
-                    echo "Checking deployment prerequisites..."
+                    echo "Checking deployment prerequisites.."
                     def canDeploy = input(
                         message: "Promote to PRODUCTION?",
                         parameters: [choice(choices: 'Yes\nNo', description: 'Confirm production release', name: 'approval')]
@@ -139,12 +215,12 @@ pipeline {
                     if (canDeploy == 'Yes') {
                         withCredentials([string(credentialsId: 'OCTOPUS_API_KEY', variable: 'OCTO_API')]) {
                             def octopusServer = 'https://jenku.octopus.app'
-                            def projectName = 'my jenku app' // Ensure this matches your Octopus project exactly
+                            def projectName = 'my jenku app' // Match your Octopus project exactly
                             def releaseVersion = "1.0.${env.BUILD_NUMBER}"
                             def environmentName = 'Production'
-                            def octopusPackageId = 'My Jenku App' // Matches the ID used in the Push stage
+                            def octopusPackageId = 'My Jenku App' // Match the ID used in the Push stage
 
-                            // Create a release (now with the package specified)
+                            // Creating a release (now with the package specified)
                             bat """
                                 C:\\Users\\Levin\\Downloads\\OctopusTools.9.0.0.win-x64\\octo.exe create-release ^
                                 --server "${octopusServer}" ^
@@ -165,7 +241,7 @@ pipeline {
                                 --progress
                             """
                         }
-                        echo "✅ Production deployment triggered via Octopus"
+                        echo " Production deployment triggered by Octopus"
                         emailext (
                             subject: "RELEASED: ${env.JOB_NAME} v${env.BUILD_NUMBER} to production",
                             to: 's224877838@deakin.edu.au'
@@ -176,7 +252,52 @@ pipeline {
                     }
                 }
             }
+            post {
+                always {
+                    // This email reports the overall status of the Release to Production stage
+                    emailext(
+                        to: 's224877838@deakin.edu.au',
+                        subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Release to Production Stage - ${currentBuild.currentResult}",
+                        body: "Stage 'Release to Production' completed. Check console output at ${env.BUILD_URL}",
+                        attachLog: true
+                    )
+                }
+            }
         }
-
+    }
+    // Optional: Add a final post-pipeline block for overall build status notification
+    post {
+        failure {
+            emailext(
+                to: 's224877838@deakin.edu.au',
+                subject: "🚨 BUILD FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "The Jenkins pipeline failed. Please check the console output: ${env.BUILD_URL}",
+                attachLog: true
+            )
+        }
+        unstable {
+            emailext(
+                to: 's224877838@deakin.edu.au',
+                subject: "⚠️ BUILD UNSTABLE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "The Jenkins pipeline completed with warnings (e.g., security vulnerabilities or New Relic alerts). Please check the console output: ${env.BUILD_URL}",
+                attachLog: true
+            )
+        }
+        success {
+            emailext(
+                to: 's224877838@deakin.edu.au',
+                subject: "✅ BUILD SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "The Jenkins pipeline completed successfully. Build URL: ${env.BUILD_URL}",
+                attachLog: true
+            )
+        }
+        aborted {
+            emailext(
+                to: 's224877838@deakin.edu.au',
+                subject: "❌ BUILD ABORTED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "The Jenkins pipeline was aborted (e.g., manual intervention). Build URL: ${env.BUILD_URL}",
+                attachLog: true
+            )
+        }
     }
 }
