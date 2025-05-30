@@ -61,7 +61,7 @@ pipeline {
                 script {
                     withCredentials([string(credentialsId: 'NEWRELIC_API_KEY', variable: 'NR_API_KEY')]) {
                         bat """
-                        curl -X GET "${env.NEWRELIC_API_URL}" ^
+                        curl -X GET "${env.NEW_RELIC_API_URL}" ^
                         -H "Api-Key: %NR_API_KEY%" ^
                         -H "Accept: application/json" ^
                         -o newrelic-alerts.json
