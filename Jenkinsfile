@@ -96,55 +96,55 @@ pipeline {
             }
         }
         stage('Release to Production') {
-    steps {
-        script {
-            echo "Checking deployment prerequisites..."
+          steps {
+              script {
+                  echo "Checking deployment prerequisites..."
 
-            def canDeploy = input(
-                message: "Promote to PRODUCTION?",
-                parameters: [choice(choices: 'Yes\nNo', description: 'Confirm production release', name: 'approval')]
-            )
+                   def canDeploy = input(
+                       message: "Promote to PRODUCTION?",
+                       parameters: [choice(choices: 'Yes\nNo', description: 'Confirm production release', name: 'approval')]
+                    )
 
-            if (canDeploy == 'Yes') {
-                withCredentials([string(credentialsId: 'OCTOPUS_API_KEY', variable: 'OCTO_API')]) {
-                    def octopusServer = 'https://jenku.octopus.app' // Replace with your Octopus URL
-                    def projectName = 'My jenku app' // Replace with your Octopus project
-                    def releaseVersion = "1.0.${env.BUILD_NUMBER}" // Or however you're tagging
-                    def environmentName = 'Production'
+                   if (canDeploy == 'Yes') {
+                       withCredentials([string(credentialsId: 'OCTOPUS_API_KEY', variable: 'OCTO_API')]) {
+                           def octopusServer = 'https://jenku.octopus.app' // Replace with your Octopus URL
+                           def projectName = 'My jenku app' // Replace with your Octopus project
+                           def releaseVersion = "1.0.${env.BUILD_NUMBER}" // Or however you're tagging
+                           def environmentName = 'Production'
 
-                    // Create a release
-                    bat """
-                        C:\\Users\\Levin\\Downloads\\OctopusTools.9.0.0.win-x64\\octo.exe octo create-release ^
-                        --server ${octopusServer} ^
-                        --apikey ${OCTO_API} ^
-                        --project "${projectName}" ^
-                        --releaseNumber ${releaseVersion}
-                    """
+                            // Create a release
+                           bat """
+                                 C:\\Users\\Levin\\Downloads\\OctopusTools.9.0.0.win-x64\\octo.exe create-release ^
+                                 --server ${octopusServer} ^
+                                 --apikey ${OCTO_API} ^
+                                 --project "${projectName}" ^
+                                 --releaseNumber ${releaseVersion}
+                            """
 
-                    // Deploy the release
-                    bat """
-                        C:\Users\Levin\Downloads\OctopusTools.9.0.0.win-x64\\octo.exe octo deploy-release ^
-                        --server ${octopusServer} ^
-                        --apikey ${OCTO_API} ^
-                        --project "${projectName}" ^
-                        --releaseNumber ${releaseVersion} ^
-                        --deployTo "${environmentName}" ^
-                        --progress
-                    """
+                            // Deploy the release
+                           bat """
+                                  C:\Users\Levin\Downloads\\OctopusTools.9.0.0.win-x64\\octo.exe deploy-release ^
+                                  --server ${octopusServer} ^
+                                  --apikey ${OCTO_API} ^
+                                  --project "${projectName}" ^
+                                  --releaseNumber ${releaseVersion} ^
+                                  --deployTo "${environmentName}" ^
+                                  --progress
+                            """
+                        }
+
+                        echo "✅ Production deployment triggered via Octopus"
+                        emailext (
+                            subject: "RELEASED: ${env.JOB_NAME} v${env.BUILD_NUMBER} to production",
+                            to: 'team@company.com'
+                        )
+                    } else {
+                             echo "🚫 Production release aborted"
+                             currentBuild.result = 'ABORTED'
+                    }
                 }
-
-                echo "✅ Production deployment triggered via Octopus"
-                emailext (
-                    subject: "RELEASED: ${env.JOB_NAME} v${env.BUILD_NUMBER} to production",
-                    to: 'team@company.com'
-                )
-            } else {
-                echo "🚫 Production release aborted"
-                currentBuild.result = 'ABORTED'
             }
         }
-    }
-}
 
     }
 }
