@@ -93,7 +93,7 @@ pipeline {
                                        emailext(
                                            
                                            subject: "Jenkins Notification: No New Relic alerts",
-                                           body: "The Jenkins pipeline completed successfully, and no active New Relic incidents were found."
+                                           body: "The Jenkins pipeline completed successfully, and no active New Relic incidents were found.",
                                             to: "${env.EMAIL_RECIPIENTS}",
                                             from: "${env.EMAIL_FROM}",
                                             mimeType: 'text/html',
