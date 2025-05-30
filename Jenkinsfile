@@ -141,7 +141,7 @@ pipeline {
                             def octopusServer = 'https://jenku.octopus.app'
                             def projectName = 'my jenku app' // Ensure this matches your Octopus project exactly
                             def releaseVersion = "1.0.${env.BUILD_NUMBER}"
-                            def environmentName = 'Production'
+                            def environmentName = 'Development'
                             def octopusPackageId = 'My Jenku App' // Matches the ID used in the Push stage
 
                             // Create a release (now with the package specified)
@@ -168,7 +168,7 @@ pipeline {
                         echo "✅ Production deployment triggered via Octopus"
                         emailext (
                             subject: "RELEASED: ${env.JOB_NAME} v${env.BUILD_NUMBER} to production",
-                            to: 'team@company.com'
+                            to: 's224877838@deakin.edu.au'
                         )
                     } else {
                         echo "🚫 Production release aborted"
