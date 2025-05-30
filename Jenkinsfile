@@ -42,6 +42,53 @@ pipeline {
                  }
             }
         }
+        stage('Monitoring & Alerting') {
+           steps {
+              script {
+                   withCredentials([string(credentialsId: 'NEWRELIC_API_KEY', variable: 'NR_KEY']) {
+                      // Get open violations from New Relic using PowerShell
+                      bat """
+                          @echo off
+                          curl.exe -s -X GET "https://api.newrelic.com/v2/alerts_violations.json?only_open=true" ^
+                          -H "X-Api-Key:%NR_KEY%" ^
+                          -o newrelic-report.json || echo Continuing despite curl error
+                      """
+                
+                      // Check if violations exist
+                      if (fileExists('newrelic-report.json')) {
+                          def report = readJSON file: 'newrelic-report.json'
+                    
+                          if (report.violations?.size() > 0) {
+                             echo "🚨 ${report.violations.size()} ACTIVE ALERTS DETECTED"
+                        
+                             // Send formatted email alert
+                             emailext (
+                                 subject: "PRODUCTION ALERT: ${report.violations.size()} issues in ${env.JOB_NAME}",
+                                 body: """
+                                      <h2>New Relic Production Alerts</h2>
+                                      <p><b>Build:</b> <a href="${env.BUILD_URL}">${env.JOB_NAME} #${env.BUILD_NUMBER}</a></p>
+                                      <h3>Active Violations:</h3>
+                                      <ul>
+                                      ${report.violations.collect { violation ->
+                                         "<li><b>${violation.policy_name}</b>: ${violation.condition_name} (${violation.severity})</li>"
+                                      }.join('\n')}
+                                      </ul>
+                                      <p>Investigate immediately in <a href="https://one.newrelic.com">New Relic</a></p>
+                                   """,
+                                   to: 's224877838@deakin.edu.au',
+                                   mimeType: 'text/html'
+                                )
+                        
+                                 // Optional: Fail the stage if violations found
+                                 currentBuild.result = 'UNSTABLE'
+                             } else {
+                                 echo "✅ No active alerts in New Relic"
+                            }
+                        }
+                    }
+                }
+            }
+        }
         stage('Deploy (Staging)') {
             steps {
                 // Restarts your Node.js application using PM2.
