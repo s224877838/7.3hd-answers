@@ -114,7 +114,7 @@ pipeline {
 
                     // Create a release
                     bat """
-                        octo create-release ^
+                        C:\\Tools\\Octopus\\octo.exe octo create-release ^
                         --server ${octopusServer} ^
                         --apikey ${OCTO_API} ^
                         --project "${projectName}" ^
@@ -123,7 +123,7 @@ pipeline {
 
                     // Deploy the release
                     bat """
-                        octo deploy-release ^
+                        C:\\Tools\\Octopus\\octo.exe octo deploy-release ^
                         --server ${octopusServer} ^
                         --apikey ${OCTO_API} ^
                         --project "${projectName}" ^
