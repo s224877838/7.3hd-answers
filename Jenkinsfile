@@ -80,6 +80,11 @@ pipeline {
                                 currentBuild.result = 'UNSTABLE' // Optional: mark build as warning
                             } else {
                                 echo 'No active New Relic incidents found.'
+                                emailext(
+                                    subject: "Jenkins Notification: No New Relic alerts",
+                                    body: "The Jenkins pipeline completed successfully, and no active New Relic incidents were found.",
+                                    to: 'levinjoseph15@gmail.com'
+                        )
                             }
                         }
                     }
