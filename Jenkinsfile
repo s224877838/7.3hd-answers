@@ -70,7 +70,7 @@ pipeline {
                                 emailext(
                                     subject: "New Relic ALERT: ${activeAlerts.size()} active issues",
                                     body: "Check New Relic dashboard for active alerts.",
-                                    to: 'levinjoseph15@gmail.com'
+                                    to: 'levinjoseph11@gmail.com'
                                 )
                                 currentBuild.result = 'UNSTABLE'
                             } else {
@@ -157,7 +157,7 @@ pipeline {
                         echo "✅ Production deployment triggered."
                         emailext(
                             subject: "RELEASED: ${env.JOB_NAME} v${env.BUILD_NUMBER} to production",
-                            to: 'levinjoseph15@gmail.com'
+                            to: 'levinjoseph11@gmail.com'
                         )
                     } else {
                         echo "🚫 Production release aborted"
