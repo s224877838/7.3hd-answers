@@ -12,11 +12,12 @@
 - Basis Setup Instruction:
 
 1. Clone the GIT Repository
-2. In the terminal write: npm install
-3. After NPM is installed, write npm install node
-4. After node is installed, write cd backend
-5. The app is ready to run, write node server.js
-6. After it runs the server, in browser type: http://localhost:3000/
+2. In the terminal write: npm install express
+3. After node is installed, write cd backend
+4. The app is ready to run, write node server.js
+5. After it runs the server, in browser type: http://localhost:3000/
+6. For pm2 to run in our system, in the terminal type npm install -g pm2
+7. For eslint to run type in the terminal npm install eslint --save-dev
 
 API Integration Guide
 
