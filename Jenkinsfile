@@ -91,7 +91,7 @@ pipeline {
             }
         }
 
-        stage('Package & Push to Octopus') {
+        stage('Package and Push to Octopus') {
             steps {
                 script {
                     def octopusPackageId = 'my jenku app'
