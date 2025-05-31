@@ -80,15 +80,6 @@ pipeline {
                     }
                 }
             }
-            post {
-                always {
-                    emailext(
-                        to: 'levinjoseph15@gmail.com',
-                        subject: "Jenkins Notification: Monitoring & Alerting Complete",
-                        body: "Monitoring and Alerting stage completed. Check Jenkins log or New Relic for details."
-                    )
-                }
-            }
         }
 
         stage('Package and Push to Octopus') {
