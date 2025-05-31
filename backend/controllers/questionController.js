@@ -140,10 +140,10 @@ async function getQuestionDetails(req, res) {
       return res.status(404).json({ error: "Question not found" });
     }
 
-    const answers = await Answer.find({ question: req.params.id }).populate(
-      "author",
-      "name email"
-    );
+    //const answers = await Answer.find({ question: req.params.id }).populate(
+      //"author",
+      //"name email"
+    //);
 
     res.js
    // on({ question, answers });
