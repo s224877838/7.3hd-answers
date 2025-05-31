@@ -2,13 +2,6 @@
 
 - Project Name: Global Studey Share Platform
 
-- Team Members and Roles:
-  Prajina Acharya: Front-End Developer
-  Trilochan Adhikari: Core Developer & Scrum Master Sprint 1
-  Uttam Nepal: Backend Dveloper & Scrum Master Sprint 2
-  Levin Joseph Poovakulath: CRUD Developer
-  Sonakshi: Front-End Developer
-
 - Basis Setup Instruction:
 
 1. Clone the GIT Repository
